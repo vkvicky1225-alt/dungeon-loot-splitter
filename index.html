@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Character encoding declared first so browser reads all characters correctly -->
+    <meta charset="UTF-8" />
+
+    <!-- Responsive viewport — prevents mobile browsers from zooming out by default -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Page description shown in search engine results and social previews -->
+    <meta name="description" content="Dungeon Loot Splitter Phase 2. Add loot items with quantities, track running totals, and split gold evenly among party members." />
+
+    <!-- Author credit -->
+    <meta name="author" content="Dungeon Loot Splitter" />
+
+    <!-- Open Graph tags for social sharing previews (Facebook, Discord, etc.) -->
+    <meta property="og:title" content="Dungeon Loot Splitter" />
+    <meta property="og:description" content="Track and split dungeon loot among your adventuring party." />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter card meta for Twitter/X link previews -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Dungeon Loot Splitter" />
+    <meta name="twitter:description" content="Track and split dungeon loot among your adventuring party." />
+
+    <title>Dungeon Loot Splitter</title>
+
+    <!-- Google Fonts: Cinzel for headings (medieval display), IM Fell English for body text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" />
+
+    <!-- All styling is in an external stylesheet — no inline CSS anywhere -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+    <!-- ============================================================
+         HEADER — Top row, spans full width.
+         Uses semantic <header> landmark so screen readers can
+         navigate directly to the page banner region.
+    ============================================================ -->
+    <header>
+        <div class="header-inner">
+            <!-- Decorative sword glyphs are aria-hidden so screen readers skip them -->
+            <span class="header-ornament" aria-hidden="true">&#9876;</span>
+            <h1>Dungeon Loot Splitter</h1>
+            <span class="header-ornament" aria-hidden="true">&#9876;</span>
+        </div>
+    </header>
+
+    <!-- ============================================================
+         MAIN — Contains all interactive application panels.
+         <main> is a semantic landmark; assistive tech can jump here.
+         On desktop (768px+) this becomes a 2-column CSS Grid.
+    ============================================================ -->
+    <main>
+
+        <!-- ======================================================
+             PANEL 1 (Second Row Left) — Party Setup
+             Lets the user declare how many adventurers will share
+             the loot. Changing this value immediately triggers
+             updateUI() to recalculate the per-member split.
+        ====================================================== -->
+        <section class="panel" id="partyPanel" aria-labelledby="partyHeading">
+            <h2 id="partyHeading">Party Setup</h2>
+
+            <div class="form-group">
+                <!-- label[for] matches input[id] — required for ADA and screen readers -->
+                <label for="partySize">Number of Party Members:</label>
+                <!--
+                    min="1"  — at least one member required
+                    step="1" — whole numbers only (no fractions of a person)
+                    aria-describedby links to the live error div below so
+                    screen readers announce validation feedback automatically
+                -->
+                <input
+                    type="number"
+                    id="partySize"
+                    name="partySize"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 4"
+                    aria-describedby="partySizeError"
+                    aria-required="true"
+                />
+            </div>
+
+            <!-- Error message hidden by default via .hidden class (display:none).
+                 role="alert" causes screen readers to announce it when revealed. -->
+            <div id="partySizeError" class="error-msg hidden" role="alert">
+                Please enter a valid party size (1 or more).
+            </div>
+        </section>
+
+
+        <!-- ======================================================
+             PANEL 2 (Second Row Right) — Add Loot
+             User enters item name, gold value, and quantity.
+             Clicking Add Loot validates inputs and pushes a
+             plain object literal into the loot array.
+        ====================================================== -->
+        <section class="panel" id="addLootPanel" aria-labelledby="addLootHeading">
+            <h2 id="addLootHeading">Add Loot</h2>
+
+            <!-- Each .form-group stacks label directly above its input,
+                 creating consistent vertical alignment at all screen sizes -->
+            <div class="form-group">
+                <label for="lootName">Loot Name:</label>
+                <input
+                    type="text"
+                    id="lootName"
+                    name="lootName"
+                    placeholder="e.g. Ancient Sword"
+                    aria-describedby="lootError"
+                    aria-required="true"
+                    autocomplete="off"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="lootValue">Loot Value:</label>
+                <!--
+                    min="0"    — blocks negative values at the HTML level (JS adds a second layer)
+                    step="0.01" — allows cents / decimal currency
+                -->
+                <input
+                    type="number"
+                    id="lootValue"
+                    name="lootValue"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 150.00"
+                    aria-describedby="lootError"
+                    aria-required="true"
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="lootQuantity">Quantity:</label>
+                <!-- min="1" — a quantity of zero would add nothing to the total -->
+                <input
+                    type="number"
+                    id="lootQuantity"
+                    name="lootQuantity"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 1"
+                    aria-describedby="lootError"
+                    aria-required="true"
+                />
+            </div>
+
+            <!-- Shared error region for all three loot fields.
+                 role="alert" triggers screen reader announcement when shown. -->
+            <div id="lootError" class="error-msg hidden" role="alert">
+                Please fill in all fields with valid values.
+            </div>
+
+            <!-- Button sits outside .form-group so it receives its own
+                 visual spacing as a distinct action element, not a field -->
+            <button type="button" id="addLootBtn">Add Loot</button>
+        </section>
+
+
+        <!-- ======================================================
+             PANEL 3 (Third Row Left) — Loot List
+             Displays all items currently in the loot array.
+             Automatically updates whenever the array changes.
+             Uses a CSS Grid table pattern for strict column alignment.
+        ====================================================== -->
+        <section class="panel" id="lootListPanel" aria-labelledby="lootListHeading">
+            <h2 id="lootListHeading">Loot List</h2>
+
+            <!-- Shown only when array is empty; hidden once any item is added -->
+            <p id="noLootMessage">No loot added.</p>
+
+            <!--
+                CSS Grid (3fr 1fr 1fr 1fr) aligns header and data columns.
+                #lootRows uses display:contents so JS-created row divs
+                participate directly in this grid rather than breaking into
+                a nested sub-grid, which would destroy column alignment.
+                role="table" + role="columnheader" make this readable by screen readers.
+            -->
+            <div class="loot-table hidden" id="lootTable" role="table" aria-label="Loot items list">
+                <div class="loot-header" role="columnheader">Name</div>
+                <div class="loot-header" role="columnheader">Value</div>
+                <div class="loot-header" role="columnheader">Qty</div>
+                <div class="loot-header" role="columnheader">Remove</div>
+
+                <!-- JS dynamically fills this container with .loot-row divs.
+                     display:contents lets children flow into the parent grid. -->
+                <div id="lootRows"></div>
+            </div>
+
+            <!-- Running total — updates live as items are added or removed.
+                 Hidden when array is empty so no misleading $0.00 shows. -->
+            <div class="total-row hidden" id="totalRow">
+                Total Loot: <span class="currency">$<span id="totalLoot">0.00</span></span>
+            </div>
+        </section>
+
+
+        <!-- ======================================================
+             PANEL 4 (Third Row Right) — Split Loot
+             Shows total and per-member share.
+             Button is disabled until: loot array is non-empty
+             AND party size is a valid integer >= 1.
+             Results update automatically when state becomes valid.
+        ====================================================== -->
+        <section class="panel" id="splitPanel" aria-labelledby="splitHeading">
+            <h2 id="splitHeading">Split Loot</h2>
+
+            <!--
+                disabled is the initial state — JS removes it in updateUI()
+                once both required conditions are satisfied.
+                aria-disabled mirrors the programmatic disabled state for
+                assistive technology that reads ARIA attributes.
+            -->
+            <button type="button" id="splitLootBtn" disabled aria-disabled="true">
+                Split Loot
+            </button>
+
+            <!-- Results region — hidden until state is valid.
+                 aria-live="polite" causes screen readers to announce updated
+                 values after the user finishes their current interaction. -->
+            <div id="splitResults" class="hidden" aria-live="polite">
+                <div class="result-block">
+                    <span class="result-label">Total Loot</span>
+                    <span class="result-value currency">$<span id="splitTotal">0.00</span></span>
+                </div>
+                <div class="result-block">
+                    <span class="result-label">Loot Per Party Member</span>
+                    <span class="result-value currency">$<span id="lootPerMember">0.00</span></span>
+                </div>
+            </div>
+
+            <!-- Instructional placeholder shown while results are hidden -->
+            <p id="splitPrompt" class="split-prompt">
+                Add loot and set party size to enable splitting.
+            </p>
+        </section>
+
+
+        <!-- ======================================================
+             PANEL 5 (Bottom Row) — Logic Explanation
+             Required reflection section. Spans both columns on
+             desktop via grid-column: span 2 in the stylesheet.
+        ====================================================== -->
+        <section class="panel reflection" aria-labelledby="reflectionHeading">
+            <h2 id="reflectionHeading">Logic Explanation</h2>
+
+            <div class="reflection-content">
+
+                <div class="reflection-block">
+                    <h3>The Loot Array as Source of Truth</h3>
+                    <p>
+                        The <code>loot</code> array declared at the top of <code>script.js</code> is the
+                        single source of truth for this application. It holds plain object literals, each
+                        with a <code>name</code>, <code>value</code>, and <code>quantity</code> property.
+                        Nothing on screen is authoritative — the screen only reflects what the array
+                        contains. If the array changes, the display must update to match.
+                    </p>
+                </div>
+
+                <div class="reflection-block">
+                    <h3>Why Quantity Was Added</h3>
+                    <p>
+                        Quantity was added to the data model because loot often comes in multiples — three
+                        health potions, five gold ingots. Storing a quantity on the object lets a single
+                        entry represent multiple units without duplicating rows. Total loot is calculated
+                        as <code>value &times; quantity</code> per item, summed across the array — so
+                        5 potions worth 10 gold each correctly contribute 50 gold to the total.
+                    </p>
+                </div>
+
+                <div class="reflection-block">
+                    <h3>Where updateUI() Performs All Work</h3>
+                    <p>
+                        <code>updateUI()</code> is the only function that calculates totals or updates the
+                        DOM. It runs a traditional <code>for</code> loop to accumulate
+                        <code>value &times; quantity</code> across every item, then a second loop to render
+                        loot rows into the CSS Grid. It then calculates the per-member share, enables or
+                        disables the Split button, and shows or hides the results region. No other function
+                        duplicates this logic.
+                    </p>
+                </div>
+
+                <div class="reflection-block">
+                    <h3>State Controls Visibility and Actions</h3>
+                    <p>
+                        <code>updateUI()</code> uses <code>if</code> statements to decide what is visible.
+                        When the array is empty the loot table is hidden and the empty-state message
+                        appears. When party size is invalid, split results stay hidden and the Split
+                        button stays disabled. Visibility is controlled by adding or removing the
+                        <code>.hidden</code> CSS class — JavaScript never sets <code>style</code>
+                        properties directly, keeping all visual rules in the stylesheet.
+                    </p>
+                </div>
+
+                <div class="reflection-block">
+                    <h3>Conditional Logic Prevents Invalid State</h3>
+                    <p>
+                        Before any item enters the array, <code>addLoot()</code> checks that the name
+                        is not empty, the value is a non-negative number, and quantity is at least 1.
+                        <code>updateUI()</code> checks that party size is a valid integer of 1 or greater
+                        before performing the split. If any check fails the operation is aborted and an
+                        error message appears in the interface. Invalid data never reaches the array and
+                        the interface never displays a stale or meaningless result.
+                    </p>
+                </div>
+
+            </div><!-- /.reflection-content -->
+
+            <!-- Logic Flow Diagram — pure HTML/CSS, no image required for this element -->
+            <div class="flow-sketch">
+                <h3>Logic Flow</h3>
+                <!--
+                    role="img" + aria-label gives screen readers a text summary
+                    of the diagram since it is a visual-only layout.
+                -->
+                <div class="flow-diagram" role="img" aria-label="Logic flow: User Action leads to Validate Input, then Mutate State, then updateUI(), then Interface Updates">
+                    <div class="flow-node action">
+                        User Action
+                        <small>(Add / Remove / Party Size)</small>
+                    </div>
+                    <div class="flow-arrow" aria-hidden="true">&#8595;</div>
+                    <div class="flow-node validate">
+                        Validate Input
+                        <small>(if statements guard the array)</small>
+                    </div>
+                    <div class="flow-arrow" aria-hidden="true">&#8595;</div>
+                    <div class="flow-node state">
+                        Mutate State
+                        <small>(push / splice / read input)</small>
+                    </div>
+                    <div class="flow-arrow" aria-hidden="true">&#8595;</div>
+                    <div class="flow-node update">
+                        updateUI()
+                        <small>(loop &rarr; calculate &rarr; render)</small>
+                    </div>
+                    <div class="flow-arrow" aria-hidden="true">&#8595;</div>
+                    <div class="flow-node display">
+                        Interface Updates
+                        <small>(totals &middot; visibility &middot; button state)</small>
+                    </div>
+                </div>
+            </div><!-- /.flow-sketch -->
+
+            <!-- W3C validation screenshot — required submission image in /images -->
+            <div class="validation-img-wrap">
+                <h3>W3C HTML Validation</h3>
+                <img
+                    src="images/validation.png"
+                    alt="Screenshot of W3C HTML validator showing no errors or warnings for this page"
+                    class="validation-img"
+                    width="800"
+                    height="400"
+                />
+            </div>
+
+        </section><!-- /.reflection -->
+
+    </main>
+
+
+    <!-- <footer> semantic landmark for supplementary page info -->
+    <footer>
+        <p>Dungeon Loot Splitter &mdash; Phase 2 &nbsp;|&nbsp; All glory to the party treasurer.</p>
+    </footer>
+
+    <!-- Script at end of body — DOM is fully parsed before JS runs.
+         All JavaScript lives in /js/script.js — zero inline JS. -->
+    <script src="js/script.js"></script>
+
+</body>
+</html>
