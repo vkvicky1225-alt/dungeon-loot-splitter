@@ -180,16 +180,14 @@
                 #lootRows uses display:contents so JS-created row divs
                 participate directly in this grid rather than breaking into
                 a nested sub-grid, which would destroy column alignment.
-                role="table" + role="columnheader" make this readable by screen readers.
+                The loot grid uses CSS Grid for column alignment — no ARIA table roles needed.
             -->
-            <div class="loot-table hidden" id="lootTable" role="table" aria-label="Loot items list">
-                <!-- columnheader elements must be wrapped in role="row" inside role="rowgroup" to satisfy ARIA table structure -->
-                <div role="rowgroup" class="loot-header-row">
-                    <div class="loot-header" role="columnheader">Name</div>
-                    <div class="loot-header" role="columnheader">Value</div>
-                    <div class="loot-header" role="columnheader">Qty</div>
-                    <div class="loot-header" role="columnheader">Remove</div>
-                </div>
+            <div class="loot-table hidden" id="lootTable">
+                <!-- Header row labels for the loot grid columns -->
+                <div class="loot-header">Name</div>
+                <div class="loot-header">Value</div>
+                <div class="loot-header">Qty</div>
+                <div class="loot-header">Remove</div>
 
                 <!-- JS dynamically fills this container with .loot-row divs.
                      display:contents lets children flow into the parent grid. -->
