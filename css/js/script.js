@@ -193,14 +193,12 @@ function updateUI() {
 
         // Enable the button and sync its ARIA state for assistive tech
         splitBtn.disabled = false;
-        splitBtn.setAttribute("aria-disabled", "false");
     } else {
         // Not ready — hide results and keep button disabled
         splitResults.classList.add("hidden");
         splitPrompt.classList.remove("hidden");
 
         splitBtn.disabled = true;
-        splitBtn.setAttribute("aria-disabled", "true");
     }
 }
 
