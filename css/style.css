@@ -603,3 +603,9 @@ input:focus-visible {
     border-radius: var(--radius);
     display: block;
 }
+
+/* Rowgroup wraps header row for valid ARIA table structure.
+   display:contents lets children participate in the parent grid. */
+.loot-header-row {
+    display: contents;
+}
