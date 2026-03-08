@@ -183,10 +183,13 @@
                 role="table" + role="columnheader" make this readable by screen readers.
             -->
             <div class="loot-table hidden" id="lootTable" role="table" aria-label="Loot items list">
-                <div class="loot-header" role="columnheader">Name</div>
-                <div class="loot-header" role="columnheader">Value</div>
-                <div class="loot-header" role="columnheader">Qty</div>
-                <div class="loot-header" role="columnheader">Remove</div>
+                <!-- columnheader elements must be wrapped in role="row" inside role="rowgroup" to satisfy ARIA table structure -->
+                <div role="rowgroup" class="loot-header-row">
+                    <div class="loot-header" role="columnheader">Name</div>
+                    <div class="loot-header" role="columnheader">Value</div>
+                    <div class="loot-header" role="columnheader">Qty</div>
+                    <div class="loot-header" role="columnheader">Remove</div>
+                </div>
 
                 <!-- JS dynamically fills this container with .loot-row divs.
                      display:contents lets children flow into the parent grid. -->
@@ -214,10 +217,8 @@
             <!--
                 disabled is the initial state — JS removes it in updateUI()
                 once both required conditions are satisfied.
-                aria-disabled mirrors the programmatic disabled state for
-                assistive technology that reads ARIA attributes.
             -->
-            <button type="button" id="splitLootBtn" disabled aria-disabled="true">
+            <button type="button" id="splitLootBtn" disabled>
                 Split Loot
             </button>
 
@@ -355,8 +356,7 @@
                     alt="Screenshot of W3C HTML validator showing no errors or warnings for this page"
                     class="validation-img"
                     width="800"
-                    height="400"
-                />
+                    height="400">
             </div>
 
         </section><!-- /.reflection -->
